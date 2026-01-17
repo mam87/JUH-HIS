@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IHC Test Request</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f4f7f6;
+    padding:20px;
+}
+.container{
+    max-width:700px;
+    background:#fff;
+    margin:auto;
+    padding:25px;
+    border-radius:10px;
+}
+label{font-weight:bold;}
+input, textarea, select{
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    margin-bottom:15px;
+}
+button{
+    padding:12px 20px;
+    background:#25D366;
+    color:white;
+    border:none;
+    border-radius:5px;
+    font-size:16px;
+    margin-top:5px;
+}
+button:hover{opacity:0.9;}
+#output{display:none;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2 style="text-align:center;">IHC Test Request</h2>
+
+<label>Patient Name</label>
+<input type="text" id="patientName">
+
+<label>Sample Number</label>
+<input type="text" id="biopsyNumber">
+
+<label>Doctor Name</label>
+<input type="text" id="doctorName">
+
+<label>IHC Markers</label>
+<select id="ihcMarkers" multiple size="8">
+<option>ER</option>
+<option>PR</option>
+<option>HER2</option>
+<option>Ki-67</option>
+<option>CK7</option>
+<option>CK20</option>
+<option>TTF-1</option>
+<option>PAX8</option>
+<option>CD3</option>
+<option>CD20</option>
+</select>
+
+<label>Other Tests</label>
+<textarea id="otherTests"></textarea>
+
+<button onclick="generateRequest()">Generate File</button>
+<button id="whatsappBtn" style="display:none;" onclick="shareWhatsApp()">Share WhatsApp</button>
+
+<div id="output">
+<textarea id="outputContent" rows="12"></textarea>
+</div>
+</div>
+
+<script>
+let ihcText = "";
+
+function generateRequest(){
+
+const patient = document.getElementById("patientName").value;
+const sample = document.getElementById("biopsyNumber").value;
+const doctor = document.getElementById("doctorName").value;
+const other = document.getElementById("otherTests").value;
+
+if(!patient || !sample || !doctor){
+    alert("Please fill all required fields");
+    return;
+}
+
+let markers = [];
+let opts = document.getElementById("ihcMarkers").selectedOptions;
+for(let i=0;i<opts.length;i++){
+    markers.push(opts[i].value);
+}
+
+ihcText =
+"IHC TEST REQUEST\n\n" +
+"Patient Name: " + patient + "\n" +
+"Sample Number: " + sample + "\n" +
+"Doctor Name: " + doctor + "\n\n" +
+"Requested IHC:\n" + markers.join(", ") + "\n\n" +
+"Other Notes:\n" + other + "\n\n" +
+"Date: " + new Date().toLocaleString();
+
+document.getElementById("outputContent").value = ihcText;
+document.getElementById("output").style.display = "block";
+
+// إنشاء ملف نصي وتحميله
+const blob = new Blob([ihcText], {type: "text/plain"});
+const link = document.createElement("a");
+link.href = URL.createObjectURL(blob);
+link.download = "IHC_Test_Request.txt";
+link.click();
+
+// إظهار زر مشاركة واتساب بعد إنشاء الملف
+document.getElementById("whatsappBtn").style.display = "inline-block";
+}
+
+function shareWhatsApp(){
+const phone = "962799146795";
+const url = "https://wa.me/" + phone + "?text=" + encodeURIComponent(ihcText);
+window.open(url,"_blank");
+}
+</script>
+
+</body>
+</html>
