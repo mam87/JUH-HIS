@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام استعارة العينات النسيجية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0f1e;--surface:#111827;--surface2:#1a2235;--surface3:#0f1929;
+  --border:#1e3a5f;--accent:#00b4d8;--accent2:#0077b6;
+  --gold:#f4a261;--green:#2ec4b6;--red:#e63946;--purple:#9b5de5;--wa:#25d366;
+  --text:#e8f4fd;--muted:#7a9bbf;
+  --font:'Tajawal',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;
+  background-image:radial-gradient(ellipse at 20% 20%,rgba(0,180,216,.07)0%,transparent 60%),
+  radial-gradient(ellipse at 80% 80%,rgba(0,119,182,.05)0%,transparent 60%);}
+
+/* ── SCREEN ── */
+.screen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.screen.active{display:flex;}
+
+/* ── LOGIN CARD ── */
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:44px 38px;width:100%;max-width:430px;box-shadow:0 0 60px rgba(0,180,216,.08);}
+.login-logo{text-align:center;margin-bottom:24px;}
+.login-logo .icon{font-size:48px;display:block;margin-bottom:8px;}
+.login-logo h1{font-size:19px;font-weight:800;color:var(--accent);line-height:1.3;}
+.login-logo p{color:var(--muted);font-size:11px;margin-top:3px;}
+
+/* ── STEP INDICATOR ── */
+.step-bar{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:22px;}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:.3s;}
+.step-dot.active{background:var(--accent);transform:scale(1.3);}
+.step-dot.done{background:var(--green);}
+
+/* ── OTP BOXES ── */
+.otp-boxes{display:flex;gap:8px;justify-content:center;margin:14px 0;
+  direction:ltr; /* ← الأرقام من اليسار لليمين */}
+.otp-boxes input{width:48px;height:54px;text-align:center;font-size:22px;font-weight:700;
+  font-family:var(--mono);background:var(--surface2);border:2px solid var(--border);
+  border-radius:10px;color:var(--text);outline:none;transition:.2s;
+  direction:ltr;unicode-bidi:bidi-override;}
+.otp-boxes input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,180,216,.15);}
+.otp-boxes input.filled{border-color:var(--green);}
+
+/* ── NOTICE BOXES ── */
+.notice{border-radius:9px;padding:11px 14px;font-size:12.5px;
+  display:flex;align-items:flex-start;gap:9px;margin-bottom:14px;line-height:1.6;}
+.notice-wa{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.25);color:#4ade80;}
+.notice-info{background:rgba(0,180,216,.08);border:1px solid rgba(0,180,216,.2);color:var(--accent);}
+.notice-warn{background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.25);color:var(--gold);}
+.notice-error{background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.25);color:#ff6b6b;}
+
+/* ── TELEGRAM SETUP STEPS ── */
+.setup-steps{counter-reset:s;}
+.setup-step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+.setup-step-num{width:26px;height:26px;border-radius:50%;background:var(--accent);
+  color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.setup-step-body{font-size:13px;color:var(--text);line-height:1.7;}
+.setup-step-body b{color:var(--accent);}
+.setup-step-body code{background:var(--surface2);border:1px solid var(--border);
+  border-radius:4px;padding:1px 6px;font-family:var(--mono);font-size:12px;color:var(--gold);}
+.cmb-link{color:var(--wa);text-decoration:none;font-weight:700;}
+.cmb-link:hover{text-decoration:underline;}
+
+/* ── FORMS ── */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.4px;}
+.field input,.field select,.field textarea{width:100%;padding:10px 13px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);
+  font-size:13.5px;transition:.2s;outline:none;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,180,216,.12);}
+.field select option{background:var(--surface);}
+.wa-field{display:flex;align-items:stretch;}
+.wa-prefix{padding:10px 11px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px 0 0 8px;color:var(--muted);font-size:12.5px;white-space:nowrap;display:flex;align-items:center;}
+.wa-field input{border-radius:0 8px 8px 0!important;flex:1;border-right:none!important;}
+
+/* ── TIMER ── */
+.otp-timer{text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px;}
+.otp-timer span{color:var(--gold);font-family:var(--mono);font-weight:700;}
+
+/* ── BUTTONS ── */
+.btn{padding:10px 20px;border:none;border-radius:8px;font-family:var(--font);
+  font-size:13.5px;font-weight:700;cursor:pointer;transition:.2s;letter-spacing:.2px;display:inline-flex;align-items:center;gap:6px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 18px rgba(0,180,216,.25);}
+.btn-primary:hover:not(:disabled){background:#0096c7;transform:translateY(-1px);}
+.btn-success{background:var(--green);color:#fff;} .btn-success:hover:not(:disabled){background:#25a99e;}
+.btn-danger{background:var(--red);color:#fff;} .btn-danger:hover:not(:disabled){background:#c1121f;}
+.btn-gold{background:var(--gold);color:#fff;} .btn-gold:hover:not(:disabled){background:#e08c4a;}
+.btn-purple{background:var(--purple);color:#fff;} .btn-purple:hover:not(:disabled){background:#7b45c5;}
+.btn-wa{background:var(--wa);color:#fff;} .btn-wa:hover:not(:disabled){background:#1eb854;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.btn-link{background:none;border:none;color:var(--accent);font-size:12.5px;padding:0;cursor:pointer;text-decoration:underline;}
+.btn-sm{padding:7px 13px;font-size:12px;} .btn-xs{padding:4px 9px;font-size:11px;}
+.btn-full{width:100%;justify-content:center;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ── SPINNER ── */
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── APP ── */
+#app{display:none;flex-direction:column;min-height:100vh;}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 18px;height:58px;
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.header-brand{display:flex;align-items:center;gap:9px;}
+.header-brand .logo{font-size:20px;}
+.header-brand h2{font-size:14px;font-weight:800;color:var(--accent);}
+.header-brand span{font-size:10px;color:var(--muted);display:block;}
+.header-user{display:flex;align-items:center;gap:7px;}
+.user-badge{background:var(--surface2);border:1px solid var(--border);border-radius:7px;
+  padding:5px 11px;font-size:12px;color:var(--muted);}
+.user-badge strong{color:var(--accent);}
+.admin-badge{background:rgba(244,162,97,.15);border-color:rgba(244,162,97,.3);}
+.admin-badge strong{color:var(--gold);}
+.tabs{display:flex;gap:3px;padding:9px 18px;background:var(--surface);
+  border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.tab{padding:7px 15px;border-radius:7px;border:none;background:transparent;
+  color:var(--muted);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:.2s;}
+.tab:hover{color:var(--text);background:var(--surface2);}
+.tab.active{background:var(--accent);color:#fff;}
+main{flex:1;padding:22px 18px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.card-title{font-size:14px;font-weight:800;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:7px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.form-grid .span2{grid-column:span 2;}
+@media(max-width:560px){.form-grid{grid-template-columns:1fr;}.form-grid .span2{grid-column:span 1;}}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead th{background:var(--surface2);padding:9px 11px;text-align:right;color:var(--muted);
+  font-weight:700;border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody td{padding:9px 11px;text-align:right;border-bottom:1px solid rgba(30,58,95,.4);vertical-align:middle;}
+tbody tr:hover{background:rgba(0,180,216,.04);}
+.status{display:inline-block;padding:3px 8px;border-radius:20px;font-size:10.5px;font-weight:700;}
+.status-out{background:rgba(230,57,70,.15);color:#ff6b6b;border:1px solid rgba(230,57,70,.3);}
+.status-returned{background:rgba(46,196,182,.15);color:var(--green);border:1px solid rgba(46,196,182,.3);}
+.audit-chip{display:inline-block;background:rgba(46,196,182,.08);border:1px solid rgba(46,196,182,.2);
+  border-radius:6px;padding:4px 8px;font-size:10.5px;line-height:1.7;}
+.audit-chip .lbl{color:var(--muted);}
+.audit-chip .val{color:var(--green);font-family:var(--mono);}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:16px;text-align:center;}
+.stat-num{font-size:28px;font-weight:800;font-family:var(--mono);}
+.stat-label{font-size:10.5px;color:var(--muted);margin-top:4px;}
+.stat-accent .stat-num{color:var(--accent);}.stat-gold .stat-num{color:var(--gold);}
+.stat-green .stat-num{color:var(--green);}.stat-red .stat-num{color:var(--red);}
+.search-bar{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;}
+.search-bar input{flex:1;min-width:170px;padding:8px 12px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;}
+.search-bar input:focus{border-color:var(--accent);}
+.search-bar select{padding:8px 12px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;}
+#toast{position:fixed;bottom:22px;right:22px;background:var(--green);color:#fff;
+  padding:10px 18px;border-radius:9px;font-weight:700;font-size:13px;
+  transform:translateY(100px);opacity:0;transition:.3s;z-index:9999;box-shadow:0 8px 28px rgba(0,0,0,.3);}
+#toast.show{transform:translateY(0);opacity:1;}
+#toast.error{background:var(--red);}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);
+  z-index:200;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:24px;width:100%;max-width:500px;max-height:88vh;overflow-y:auto;}
+.modal h3{font-size:15px;font-weight:800;margin-bottom:16px;}
+.modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:16px;}
+.info-box{font-size:13px;line-height:2;background:var(--surface2);padding:13px;border-radius:8px;border:1px solid var(--border);}
+.role-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700;}
+.role-admin{background:rgba(244,162,97,.2);color:var(--gold);}
+.role-tech{background:rgba(0,180,216,.15);color:var(--accent);}
+.cp-section{background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:16px;}
+.cp-section h4{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
+.empty{text-align:center;padding:38px;color:var(--muted);font-size:13px;}
+.empty .icon{font-size:38px;display:block;margin-bottom:9px;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.login-hint{text-align:center;color:var(--muted);font-size:11.5px;margin-top:12px;line-height:1.8;}
+
+
+/* ── SUSPENDED ── */
+.suspended-row td{opacity:.45;}
+.suspended-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;
+  font-weight:700;background:rgba(230,57,70,.18);color:#ff6b6b;border:1px solid rgba(230,57,70,.35);}
+
+/* ── ACTIVITY LOG ── */
+.act-icon{font-size:14px;margin-left:4px;}
+.act-login{color:var(--green);}
+.act-logout{color:var(--muted);}
+.act-add{color:var(--accent);}
+.act-delete{color:var(--red);}
+.act-return{color:var(--green);}
+.act-user-add{color:var(--gold);}
+.act-user-del{color:var(--red);}
+.act-approve{color:var(--green);}
+.act-reject{color:var(--red);}
+.act-suspend{color:var(--red);}
+.act-unsuspend{color:var(--green);}
+.act-reset-pass{color:var(--purple);}
+/* ── OVERDUE ── */
+.overdue-row td{background:rgba(230,57,70,.04)!important;}
+.overdue-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;
+  border-radius:20px;font-size:10.5px;font-weight:700;
+  background:rgba(230,57,70,.18);color:#ff6b6b;border:1px solid rgba(230,57,70,.4);
+  animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+
+/* ── OVERDUE BANNER ── */
+#overdueBanner{display:none;background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);
+  border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;
+  color:#ff6b6b;cursor:pointer;transition:.2s;}
+#overdueBanner:hover{background:rgba(230,57,70,.15);}
+
+/* ── BACKUP SECTION ── */
+.backup-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;}
+@media(max-width:500px){.backup-grid{grid-template-columns:1fr;}}
+
+/* ── PRINT ── */
+@media print{
+  header,.tabs,#overdueBanner,.search-bar,.btn,.modal-overlay,
+  .screen,.stats-row{display:none!important;}
+  body{background:#fff;color:#000;}
+  .card{border:1px solid #ccc;box-shadow:none;padding:12px;}
+  .card-title{color:#000;}
+  table{font-size:11px;}
+  thead th{background:#eee!important;color:#000!important;}
+  tbody td{color:#000!important;border-color:#ccc!important;}
+  .audit-chip{background:#f0faf9!important;border-color:#ccc!important;}
+  .audit-chip .val,.audit-chip .lbl{color:#000!important;}
+  .status-out{background:#ffe5e5!important;color:#c00!important;}
+  .status-returned{background:#e5faf7!important;color:#007a6e!important;}
+  #printHeader{display:block!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1 — LOGIN (رقم + كلمة مرور)
+═══════════════════════════════════════════ -->
+<div id="s-login" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="icon">🔬</span>
+      <h1>نظام استعارة العينات النسيجية</h1>
+      <p>Histopathology Tissue Loan System — JUH</p>
+    </div>
+    <div class="field">
+      <label>رقم المستخدم</label>
+      <input type="text" id="loginId" placeholder="ADM01 أو T001" />
+    </div>
+    <div class="field">
+      <label>كلمة المرور</label>
+      <input type="password" id="loginPass" placeholder="••••••" />
+    </div>
+    <button class="btn btn-primary btn-full" id="btnLogin" onclick="startLogin()">
+      تسجيل الدخول →
+    </button>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn-link" onclick="showForgotFlow()">🔑 نسيت كلمة السر</button>
+      <span style="color:var(--border)">|</span>
+      <button class="btn-link" onclick="showRegisterFlow()" style="color:var(--green)">✏️ تسجيل مستخدم جديد</button>
+    </div>
+    <p class="login-hint">
+      للتجربة: <strong style="color:var(--accent)">T001 / 1234</strong>
+      &nbsp;|&nbsp; <strong style="color:var(--gold)">ADM01 / admin123</strong>
+    </p>
+  </div>
+</div>
+
+<!-- SCREEN 2 (OTP login) removed — direct login only -->
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 3 — FORGOT PASSWORD (الخطوة 1: إدخال رقم المستخدم)
+═══════════════════════════════════════════ -->
+<div id="s-forgot-id" class="screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="icon">🔑</span>
+      <h1>استعادة كلمة السر</h1>
+      <p>Password Recovery via Email OTP</p>
+    </div>
+    <div class="notice notice-info">
+      <span style="font-size:18px;flex-shrink:0">ℹ️</span>
+      <span>سيتم إرسال رمز تحقق إلى البريد الإلكتروني المسجل لحسابك.</span>
+    </div>
+    <div class="field">
+      <label>رقم المستخدم</label>
+      <input type="text" id="forgotId" placeholder="T001 أو ADM01" />
+    </div>
+    <button class="btn btn-gold btn-full" id="btnForgotSend" onclick="forgotStep1()">
+      📧 إرسال رمز التحقق عبر الإيميل
+    </button>
+    <div style="text-align:center;margin-top:12px;">
+      <button class="btn-link" onclick="showScreen('s-login')">← العودة للدخول</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 4 — FORGOT PASSWORD (الخطوة 2: OTP + كلمة مرور جديدة)
+═══════════════════════════════════════════ -->
+<div id="s-forgot-otp" class="screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="icon">🔐</span>
+      <h1>تعيين كلمة سر جديدة</h1>
+      <p>Enter OTP + New Password</p>
+    </div>
+    <div class="notice notice-info" id="forgotWaNotice">
+      <span style="font-size:20px;flex-shrink:0">💬</span>
+      <span id="forgotNoticeText"></span>
+    </div>
+    <p style="color:var(--muted);font-size:12px;text-align:center;margin-bottom:4px;">رمز التحقق (6 أرقام)</p>
+    <div class="otp-boxes">
+      <input type="tel" maxlength="1" class="otp-input-forgot" oninput="otpMove(this,0,'forgot')" onkeydown="otpBack(this,0,event)"/>
+      <input type="tel" maxlength="1" class="otp-input-forgot" oninput="otpMove(this,1,'forgot')" onkeydown="otpBack(this,1,event)"/>
+      <input type="tel" maxlength="1" class="otp-input-forgot" oninput="otpMove(this,2,'forgot')" onkeydown="otpBack(this,2,event)"/>
+      <input type="tel" maxlength="1" class="otp-input-forgot" oninput="otpMove(this,3,'forgot')" onkeydown="otpBack(this,3,event)"/>
+      <input type="tel" maxlength="1" class="otp-input-forgot" oninput="otpMove(this,4,'forgot')" onkeydown="otpBack(this,4,event)"/>
+      <input type="tel" maxlength="1" class="otp-input-forgot" oninput="otpMove(this,5,'forgot')" onkeydown="otpBack(this,5,event)"/>
+    </div>
+    <div class="otp-timer">ينتهي خلال: <span id="forgotOtpTimer">05:00</span></div>
+    <div class="divider"></div>
+    <div class="field">
+      <label>كلمة المرور الجديدة</label>
+      <input type="password" id="newPass1" placeholder="••••••" />
+    </div>
+    <div class="field">
+      <label>تأكيد كلمة المرور الجديدة</label>
+      <input type="password" id="newPass2" placeholder="••••••" />
+    </div>
+    <button class="btn btn-success btn-full" onclick="forgotStep2()">✅ حفظ كلمة المرور الجديدة</button>
+    <div class="btn-row" style="margin-top:9px;">
+      <button class="btn btn-wa btn-sm" style="flex:1" id="btnResendForgot" onclick="resendForgotOTP()">🔁 إعادة الإرسال</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="showScreen('s-forgot-id')">← رجوع</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 5 — WHATSAPP OTP SETUP
+═══════════════════════════════════════════ -->
+<div id="s-cmb-setup" class="screen">
+  <div class="login-card" style="max-width:460px">
+    <div class="login-logo">
+      <span class="icon">💬</span>
+      <h1>إعداد واتساب OTP</h1>
+      <p>تفعيل رمز التحقق عبر واتساب</p>
+    </div>
+    <div class="notice notice-info" style="margin-bottom:14px">
+      <span style="font-size:18px;flex-shrink:0">ℹ️</span>
+      <span>أضف رقم واتساب لكل مستخدم من تبويب <b>ملفي</b> أو من <b>إدارة المستخدمين</b>.</span>
+    </div>
+    <div class="setup-step">
+      <div class="setup-step-num">1</div>
+      <div class="setup-step-body">
+        كل مستخدم يضيف رقم واتساب من <b>👤 ملفي ← واتساب OTP</b><br>
+        أو المشرف يضيفه عند إنشاء الحساب.
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-step-num">2</div>
+      <div class="setup-step-body">
+        عند الدخول أو نسيان كلمة المرور → يُفتح واتساب تلقائياً برسالة تحتوي الرمز.
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-step-num">3</div>
+      <div class="setup-step-body">
+        المستخدم يُرسل الرسالة لنفسه، ثم يُدخل الرمز في النظام.
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:10px;">
+      <button class="btn-link" id="cmbBackBtn" onclick="showScreen('s-login')">← رجوع</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     SCREEN — تسجيل مستخدم جديد
+═══════════════════════════════════════════ -->
+<div id="s-register" class="screen">
+  <div class="login-card" style="max-width:460px">
+    <div class="login-logo">
+      <span class="icon">✏️</span>
+      <h1>تسجيل مستخدم جديد</h1>
+      <p>سيتم مراجعة طلبك من المشرف قبل التفعيل</p>
+    </div>
+    <div class="notice notice-warn" style="margin-bottom:16px">
+      <span style="font-size:18px;flex-shrink:0">⏳</span>
+      <span>حسابك سيكون <b>معلّقاً</b> حتى يوافق عليه المشرف</span>
+    </div>
+    <div class="form-grid">
+      <div class="field span2">
+        <label>الاسم الكامل *</label>
+        <input type="text" id="regName" placeholder="الاسم الكامل بالعربي"/>
+      </div>
+      <div class="field">
+        <label>رقم المستخدم المطلوب *</label>
+        <input type="text" id="regId" placeholder="مثال: T003"/>
+      </div>
+      <div class="field">
+        <label>رقم الواتساب</label>
+        <div class="wa-field">
+          <span class="wa-prefix">🇯🇴 +962</span>
+          <input type="tel" id="regPhone" placeholder="791234567"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>كلمة المرور *</label>
+        <input type="password" id="regPass" placeholder="••••••"/>
+      </div>
+      <div class="field">
+        <label>تأكيد كلمة المرور *</label>
+        <input type="password" id="regPassConf" placeholder="••••••"/>
+      </div>
+    </div>
+    <button class="btn btn-success btn-full" onclick="submitRegister()">
+      📤 إرسال طلب التسجيل
+    </button>
+    <div style="text-align:center;margin-top:12px;">
+      <button class="btn-link" onclick="showScreen('s-login')">← رجوع للدخول</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     APP
+═══════════════════════════════════════════ -->
+<div id="app">
+  <header>
+    <div class="header-brand">
+      <span class="logo">🔬</span>
+      <div>
+        <h2>نظام استعارة العينات</h2>
+        <span>Histopathology Tissue Loan System</span>
+      </div>
+    </div>
+    <div class="header-user">
+      <div class="user-badge" id="userBadge">
+        <strong id="userNameBadge">-</strong>
+        <span id="userIdBadge" style="font-size:10px;font-family:var(--mono);display:block"></span>
+      </div>
+      <button class="btn btn-purple btn-sm" onclick="openCpModal()">🔑 كلمة المرور</button>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">خروج</button>
+    </div>
+  </header>
+  <div class="tabs">
+    <button class="tab active" data-tab="records" onclick="switchTab('records',this)">📋 السجل</button>
+    <button class="tab" data-tab="add" onclick="switchTab('add',this)">➕ إضافة</button>
+    <button class="tab" data-tab="profile" onclick="switchTab('profile',this)">👤 ملفي</button>
+    <button class="tab" id="adminTab" data-tab="admin" onclick="switchTab('admin',this)" style="display:none">⚙️ الإدارة <span id="pendingBadge" style="display:none;background:var(--red);color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;margin-right:4px"></span></button>
+    <button class="tab" id="auditTab" data-tab="audit" onclick="switchTab('audit',this)" style="display:none">📜 Audit Log</button>
+  </div>
+  <main>
+    <!-- RECORDS -->
+    <div id="tab-records">
+      <div id="printHeader" style="display:none;text-align:center;margin-bottom:20px;border-bottom:2px solid #000;padding-bottom:12px;">
+        <h2 style="font-size:18px;font-family:'Tajawal',sans-serif;">🔬 نظام استعارة العينات النسيجية</h2>
+        <p style="font-size:13px;">مستشفى الجامعة الأردنية — قسم علم الأنسجة المرضية</p>
+        <p style="font-size:12px;color:#555;" id="printDate"></p>
+      </div>
+      <div id="overdueBanner" onclick="filterOverdue()"></div>
+      <div class="stats-row" id="statsRow"></div>
+      <div class="card">
+        <div class="card-title">📋 سجل طلبات الاستعارة</div>
+        <div class="search-bar">
+          <input type="text" id="searchInput" placeholder="🔍 بحث..." oninput="renderTable()"/>
+          <select id="filterStatus" onchange="renderTable()">
+            <option value="">كل الحالات</option>
+            <option value="out">مُستعارة</option>
+            <option value="returned">تم الإرجاع</option>
+            <option value="overdue">⚠️ متأخرة</option>
+          </select>
+          <button class="btn btn-success btn-sm export-only" onclick="exportExcel()">📥 Excel</button>
+          <button class="btn btn-purple btn-sm print-only" onclick="printReport()">🖨️ PDF / طباعة</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>رقم الحالة</th><th>المستعير</th><th>Checked by Dr.</th>
+            <th>تاريخ الاستعارة</th><th>الحالة</th><th>🔒 Audit الإرجاع</th><th>المُدخِل</th><th>إجراءات</th></tr></thead>
+            <tbody id="recordsTbody"></tbody>
+          </table>
+        </div>
+        <div id="emptyMsg" class="empty" style="display:none"><span class="icon">🗂️</span>لا توجد سجلات</div>
+      </div>
+    </div>
+    <!-- ADD -->
+    <div id="tab-add" style="display:none">
+      <div class="card">
+        <div class="card-title">➕ إضافة طلب استعارة جديد</div>
+        <div class="form-grid">
+          <div class="field"><label>رقم الحالة *</label><input type="text" id="fCaseNo" placeholder="HP-2024-001"/></div>
+          <div class="field"><label>اسم المستعير *</label><input type="text" id="fBorrower" placeholder="الاسم الكامل"/></div>
+          <div class="field"><label>Checked by Dr. *</label><input type="text" id="fDoctor" placeholder="اسم الطبيب"/></div>
+          <div class="field"><label>تاريخ الاستعارة *</label><input type="date" id="fDate"/></div>
+          <div class="field span2"><label>ملاحظات</label><textarea id="fNotes" rows="3" placeholder="أي ملاحظات..."></textarea></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="addRecord()">💾 حفظ</button>
+          <button class="btn btn-ghost" onclick="clearForm()">🗑️ مسح</button>
+        </div>
+      </div>
+    </div>
+    <!-- PROFILE -->
+    <div id="tab-profile" style="display:none">
+      <div class="card">
+        <div class="card-title">👤 ملفي الشخصي</div>
+        <div class="info-box" id="profileInfo"></div>
+
+        <div class="cp-section">
+          <h4>🔑 تغيير كلمة المرور الخاصة بك</h4>
+          <div class="notice notice-info" style="margin-bottom:12px;font-size:12px;">
+            <span style="flex-shrink:0">🔒</span>
+            <span>كلمة مرورك محمية — لا يمكن لأي شخص رؤيتها. فقط أنت تستطيع تغييرها، أو المشرف يعيد تعيينها.</span>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>كلمة المرور الحالية</label><input type="password" id="cpOld" placeholder="••••••"/></div>
+            <div class="field"><label>كلمة المرور الجديدة</label><input type="password" id="cpNew" placeholder="••••••"/></div>
+            <div class="field"><label>تأكيد كلمة المرور الجديدة</label><input type="password" id="cpConf" placeholder="••••••"/></div>
+          </div>
+          <button class="btn btn-purple" onclick="changePassword('cpOld','cpNew','cpConf')">🔐 حفظ كلمة المرور</button>
+        </div>
+
+        <div class="cp-section">
+          <h4>💬 رقم الواتساب لاستقبال OTP</h4>
+          <div class="notice notice-info" style="margin-bottom:12px">
+            <span style="font-size:16px;flex-shrink:0">ℹ️</span>
+            <span>سيُفتح واتساب تلقائياً برسالة الرمز عند الدخول أو نسيان كلمة المرور.</span>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>رقم الواتساب (مع رمز الدولة)</label>
+              <div class="wa-field">
+                <span class="wa-prefix">🇯🇴 +962</span>
+                <input type="tel" id="profileApiKey" placeholder="791234567"/>
+              </div>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-wa btn-sm" onclick="saveProfileCmb()">💾 حفظ</button>
+            <button class="btn btn-ghost btn-sm" onclick="testProfileCmb()">🧪 اختبار</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- AUDIT TAB (للفني) -->
+    <div id="tab-audit" style="display:none">
+      <div class="card">
+        <div class="card-title">📜 Audit Log — سجل الإرجاعات</div>
+        <p style="color:var(--muted);font-size:12px;margin-bottom:14px;">يُسجَّل تلقائياً: من أرجع العينة، رقمه، التاريخ والوقت الدقيق</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>رقم الحالة</th><th>اسم المُرجِع</th><th>رقم المستخدم</th><th>التاريخ والوقت الدقيق</th></tr></thead>
+            <tbody id="auditTbodyTech"></tbody>
+          </table>
+        </div>
+        <div id="auditEmptyTech" class="empty" style="display:none"><span class="icon">📜</span>لا توجد سجلات بعد</div>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div id="tab-admin" style="display:none">
+      <div class="card" id="pendingCard" style="display:none">
+        <div class="card-title" id="pendingTitle">⏳ طلبات التسجيل المعلّقة</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>الاسم</th><th>رقم المستخدم</th><th>واتساب</th><th>وقت الطلب</th><th>إجراء</th></tr></thead>
+          <tbody id="pendingTbody"></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-title">👤 إضافة مستخدم جديد</div>
+        <div class="notice notice-warn" style="margin-bottom:14px;font-size:12px;">
+          <span style="flex-shrink:0">🔒</span>
+          <span>كلمات المرور <strong>لا تُعرض</strong> في أي مكان بعد الحفظ. فقط المشرف يستطيع إعادة تعيينها عبر زر "إعادة تعيين".</span>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>رقم المستخدم *</label><input type="text" id="aId" placeholder="T003"/></div>
+          <div class="field"><label>الاسم الكامل *</label><input type="text" id="aName" placeholder="اسم الفني"/></div>
+          <div class="field"><label>رقم الواتساب</label><input type="tel" id="aPhone" placeholder="+962791234567"/></div>
+          <div class="field"><label>كلمة المرور الأولية *</label><input type="password" id="aPass" placeholder="••••••"/></div>
+          <div class="field"><label>الصلاحية</label>
+            <select id="aRole"><option value="tech">فني مختبر</option><option value="admin">مشرف (Admin)</option></select>
+          </div>
+        </div>
+        <button class="btn btn-gold" onclick="addUser()">➕ إضافة</button>
+      </div>
+      <div class="card">
+        <div class="card-title">👥 قائمة المستخدمين</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>رقم المستخدم</th><th>الاسم</th><th>الصلاحية</th><th>الحالة</th><th>واتساب</th><th>آخر دخول</th><th>إجراءات</th></tr></thead>
+          <tbody id="usersTbody"></tbody>
+        </table></div>
+      </div>
+
+      <div class="card admin-only">
+        <div class="card-title">🕐 سجل النشاط الكامل — Activity Log</div>
+        <div class="search-bar" style="margin-bottom:14px">
+          <select id="actFilter" onchange="renderActivityLog()" style="padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;">
+            <option value="">كل النشاطات</option>
+            <option value="login">دخول</option>
+            <option value="logout">خروج</option>
+            <option value="add_record">إضافة سجل</option>
+            <option value="delete_record">حذف سجل</option>
+            <option value="return">إرجاع عينة</option>
+            <option value="user_add">إضافة مستخدم</option>
+            <option value="user_del">حذف مستخدم</option>
+            <option value="approve">قبول طلب</option>
+            <option value="reject">رفض طلب</option>
+            <option value="suspend">إيقاف حساب</option>
+            <option value="reset_pass">إعادة تعيين كلمة مرور</option>
+          </select>
+          <button class="btn btn-danger btn-sm" onclick="clearActivityLog()" style="margin-right:auto">🗑️ مسح السجل</button>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>الوقت</th><th>المستخدم</th><th>الإجراء</th><th>التفاصيل</th></tr></thead>
+          <tbody id="actTbody"></tbody>
+        </table></div>
+        <div id="actEmpty" class="empty" style="display:none"><span class="icon">🕐</span>لا توجد نشاطات</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📜 Audit Log — سجل الإرجاعات</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>رقم الحالة</th><th>اسم المُرجِع</th><th>رقم المستخدم</th><th>الوقت الدقيق</th><th>المتصفح</th></tr></thead>
+          <tbody id="auditTbody"></tbody>
+        </table></div>
+        <div id="auditEmpty" class="empty" style="display:none"><span class="icon">📜</span>لا توجد سجلات بعد</div>
+      </div>
+
+      <div class="card admin-only">
+        <div class="card-title">⚙️ إعدادات النظام</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>🔔 عدد أيام الاستعارة قبل الإشعار بالتأخير</label>
+            <input type="number" id="overdueDays" min="1" max="365" value="7" placeholder="7"
+              oninput="saveSettings()" style="max-width:120px"/>
+          </div>
+          <div class="field">
+            <label>📧 إرسال تنبيه إيميل للعينات المتأخرة</label>
+            <button class="btn btn-wa btn-sm" onclick="sendOverdueAlerts()">📤 إرسال تنبيهات الآن</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card export-only">
+        <div class="card-title">💾 نسخة احتياطية واستيراد</div>
+        <div class="backup-grid">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:28px;margin-bottom:8px">📤</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px">تصدير نسخة احتياطية</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:12px">كل البيانات بصيغة JSON</div>
+            <button class="btn btn-primary btn-sm" onclick="exportBackup()">تنزيل Backup</button>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:28px;margin-bottom:8px">📥</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px">استيراد نسخة احتياطية</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:12px">استعادة البيانات من ملف JSON</div>
+            <label class="btn btn-gold btn-sm" style="cursor:pointer;">
+              اختر ملف <input type="file" accept=".json" style="display:none" onchange="importBackup(event)"/>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL: Admin Reset Password -->
+<div class="modal-overlay" id="resetPassModal">
+  <div class="modal">
+    <h3 style="color:var(--gold)">🔑 إعادة تعيين كلمة المرور</h3>
+    <div class="notice notice-warn" style="margin-bottom:14px">
+      <span style="font-size:16px;flex-shrink:0">⚠️</span>
+      <span>أنت تغيّر كلمة مرور مستخدم آخر. تأكد من إبلاغه بالكلمة الجديدة.</span>
+    </div>
+    <div id="resetPassTarget" style="font-size:13px;color:var(--muted);margin-bottom:14px;font-family:var(--mono)"></div>
+    <div class="field">
+      <label>كلمة المرور الجديدة *</label>
+      <input type="password" id="resetNewPass" placeholder="••••••" />
+    </div>
+    <div class="field">
+      <label>تأكيد كلمة المرور الجديدة *</label>
+      <input type="password" id="resetConfPass" placeholder="••••••" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('resetPassModal')">إلغاء</button>
+      <button class="btn btn-gold" onclick="confirmResetPass()">🔐 حفظ وتغيير</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: إرجاع عينة -->
+<div class="modal-overlay" id="returnModal">
+  <div class="modal">
+    <h3 style="color:var(--green)">✅ تأكيد إرجاع العينة</h3>
+    <div id="returnInfo" class="info-box" style="margin-bottom:12px"></div>
+    <div class="notice notice-wa">
+      <span style="font-size:16px">🔒</span>
+      <span>سيُسجَّل في الـ Audit Log:<br>
+        <strong id="returnAuditPreview" style="font-family:var(--mono);font-size:11px"></strong>
+      </span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('returnModal')">إلغاء</button>
+      <button class="btn btn-success" onclick="confirmReturn()">✅ تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: تغيير كلمة المرور -->
+<div class="modal-overlay" id="cpModal">
+  <div class="modal">
+    <h3 style="color:var(--purple)">🔑 تغيير كلمة المرور</h3>
+    <div class="field"><label>كلمة المرور الحالية</label><input type="password" id="mcpOld" placeholder="••••••"/></div>
+    <div class="field"><label>كلمة المرور الجديدة</label><input type="password" id="mcpNew" placeholder="••••••"/></div>
+    <div class="field"><label>تأكيد كلمة المرور الجديدة</label><input type="password" id="mcpConf" placeholder="••••••"/></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('cpModal')">إلغاء</button>
+      <button class="btn btn-purple" onclick="changePassword('mcpOld','mcpNew','mcpConf',()=>closeModal('cpModal'))">🔐 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+
+// ══════════════════════════════════════════════
+//  PERMISSIONS — صلاحيات الأدوار
+// ══════════════════════════════════════════════
+const PERMISSIONS = {
+  admin: {
+    addRecord:true, returnAny:true, deleteRecord:true,
+    viewAllRecords:true, viewAuditFull:true, viewActivity:true,
+    manageUsers:true, editOwnProfile:true, exportData:true,
+    printReport:true, sendAlerts:true
+  },
+  tech: {
+    addRecord:true, returnOwn:true, deleteRecord:false,
+    viewAllRecords:true, viewAuditFull:true, viewAuditOwn:false, viewActivity:false,
+    manageUsers:false, editOwnProfile:true, exportData:false,
+    printReport:false, sendAlerts:false
+  }
+};
+
+function can(action){
+  if(!currentUser) return false;
+  const role = currentUser.role;
+  const p = PERMISSIONS[role] || PERMISSIONS.tech;
+  // returnOwn + returnAny both mean can return own records
+  if(action==='returnOwn') return p.returnOwn || p.returnAny;
+  return !!p[action];
+}
+// ══════════════════════════════════════════════
+//  STORAGE
+// ══════════════════════════════════════════════
+const TTL=10*365.25*24*3600*1000;
+function loadData(k){
+  try{const r=localStorage.getItem(k);if(!r)return null;
+    const o=JSON.parse(r);if(o.expiry&&Date.now()>o.expiry){localStorage.removeItem(k);return null;}
+    return o.value;}catch{return null;}}
+function saveData(k,v){localStorage.setItem(k,JSON.stringify({value:v,expiry:Date.now()+TTL}));}
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+// ══ WHATSAPP OTP — يفتح واتساب برسالة جاهزة ══
+function openWaOTP(phone, otp){
+  const clean = phone.replace(/\D/g,'');
+  const msg = encodeURIComponent(
+    `🔬 *نظام استعارة العينات النسيجية*\n`+
+    `مستشفى الجامعة الأردنية\n\n`+
+    `رمز التحقق الخاص بك:\n\n`+
+    `*${otp}*\n\n`+
+    `⏱ صالح لمدة 5 دقائق\n`+
+    `🔒 لا تشارك هذا الرمز مع أحد`
+  );
+  window.open(`https://wa.me/${clean}?text=${msg}`, '_blank');
+}
+
+let users = loadData('tls_users') || [
+  {id:'ADM01',name:"Ma'mon Al-Sa'oudi",pass:'admin123',role:'admin',phone:''},
+  {id:'T001', name:'أحمد الخالد',       pass:'1234',   role:'tech', phone:''},
+  {id:'T002', name:'سارة المحمود',      pass:'1234',   role:'tech', phone:''},
+];
+let records  = loadData('tls_records') || [];
+let auditLog = loadData('tls_audit')   || [];
+let currentUser=null, pendingReturnId=null;
+let forgotOTP=null, forgotUser=null;
+let forgotTimerInterval=null;
+let pendingRequests = loadData('tls_pending') || [];
+let activityLog    = loadData('tls_activity') || [];
+function persistPending(){saveData('tls_pending',pendingRequests);}
+function persistActivity(){
+  // Keep last 500 entries
+  if(activityLog.length>500) activityLog=activityLog.slice(0,500);
+  saveData('tls_activity',activityLog);
+}
+
+const ACT_LABELS={
+  login:'🔓 دخول',logout:'🔒 خروج',add_record:'➕ إضافة سجل',
+  delete_record:'🗑️ حذف سجل',return:'✅ إرجاع عينة',
+  user_add:'👤 إضافة مستخدم',user_del:'🗑️ حذف مستخدم',
+  approve:'✅ قبول طلب',reject:'❌ رفض طلب',
+  suspend:'🚫 إيقاف حساب',unsuspend:'✅ تفعيل حساب',
+  reset_pass:'🔑 إعادة تعيين كلمة مرور'
+};
+
+function logActivity(type, details=''){
+  if(!currentUser) return;
+  activityLog.unshift({
+    id:'ACT-'+Date.now(),
+    type, details,
+    userId:currentUser.id,
+    userName:currentUser.name,
+    at:new Date().toISOString()
+  });
+  persistActivity();
+}
+
+function persist(){saveData('tls_users',users);saveData('tls_records',records);saveData('tls_audit',auditLog);}
+persist();
+
+// ══════════════════════════════════════════════
+//  TELEGRAM API — إرسال رسالة حقيقية
+// ══════════════════════════════════════════════
+function sendWaOTP(phone, otp){
+  if(!phone||phone.replace(/\D/g,'').length < 7){return false;}
+  openWaOTP(phone, otp);
+  return true;
+}
+
+// ══════════════════════════════════════════════
+//  OTP HELPERS
+// ══════════════════════════════════════════════
+function generateOTP(){return String(Math.floor(100000+Math.random()*900000));}
+
+function startOtpTimer(elemId, seconds, intervalRef, onExpire){
+  clearInterval(intervalRef);
+  let s=seconds;
+  const el=document.getElementById(elemId);
+  function tick(){
+    const m=String(Math.floor(s/60)).padStart(2,'0');
+    const sec=String(s%60).padStart(2,'0');
+    if(el)el.textContent=`${m}:${sec}`;
+    if(--s<0){clearInterval(intervalRef);if(onExpire)onExpire();}
+  }
+  tick();
+  return setInterval(tick,1000);
+}
+
+function otpMove(inp,idx,group){
+  inp.value=inp.value.replace(/\D/g,'').slice(-1);
+  inp.classList.toggle('filled',!!inp.value);
+  const sel=group==='login'?'.otp-input':'.otp-input-forgot';
+  if(inp.value&&idx<5)document.querySelectorAll(sel)[idx+1].focus();
+  const all=[...document.querySelectorAll(sel)].map(i=>i.value).join('');
+  if(all.length===6){if(group==='login')setTimeout(verifyLoginOTP,120);else setTimeout(forgotStep2auto,120);}
+}
+function otpBack(inp,idx,e){
+  if(e.key==='Backspace'&&!inp.value&&idx>0){
+    const sel=inp.classList.contains('otp-input')?'.otp-input':'.otp-input-forgot';
+    document.querySelectorAll(sel)[idx-1].focus();
+  }
+}
+function getOtpValue(sel){return[...document.querySelectorAll(sel)].map(i=>i.value).join('');}
+function clearOtpBoxes(sel){document.querySelectorAll(sel).forEach(i=>{i.value='';i.classList.remove('filled');});}
+
+// ══════════════════════════════════════════════
+//  SCREENS
+// ══════════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById(id);
+  if(el)el.classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+//  LOGIN FLOW
+// ══════════════════════════════════════════════
+function startLogin(){
+  const id=document.getElementById('loginId').value.trim();
+  const pw=document.getElementById('loginPass').value;
+  if(!id||!pw){showToast('⚠️ أدخل رقم المستخدم وكلمة المرور',true);return;}
+  // Check if pending (not yet approved)
+  const pending=pendingRequests.find(x=>x.id===id);
+  if(pending){showToast('⏳ حسابك معلّق — انتظر موافقة المشرف',true);return;}
+  const u=users.find(x=>x.id===id&&x.pass===pw);
+  if(!u){showToast('❌ رقم المستخدم أو كلمة المرور غير صحيحة',true);return;}
+  if(u.suspended){showToast('🚫 حسابك موقوف — تواصل مع المشرف',true);return;}
+  finalizeLogin(u);
+}
+
+function finalizeLogin(u){
+  currentUser=u;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('app').style.display='flex';
+  initApp();
+  // Update last login
+  const idx=users.findIndex(x=>x.id===u.id);
+  if(idx>=0){users[idx].lastLogin=new Date().toISOString();persist();}
+  logActivity('login');
+}
+
+function logout(){
+  logActivity('logout');
+  currentUser=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginId').value='';
+  document.getElementById('loginPass').value='';
+  showScreen('s-login');
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('s-login').classList.contains('active'))startLogin();
+});
+
+// ══════════════════════════════════════════════
+//  FORGOT PASSWORD FLOW
+// ══════════════════════════════════════════════
+function showForgotFlow(){
+  document.getElementById('forgotId').value='';
+  showScreen('s-forgot-id');
+}
+
+async function forgotStep1(){
+  const id=document.getElementById('forgotId').value.trim();
+  const u=users.find(x=>x.id===id);
+  if(!u){showToast('❌ رقم المستخدم غير موجود',true);return;}
+  if(!u.phone||u.phone.replace(/\D/g,'').length<7){
+    showToast('❌ لا يوجد رقم هاتف مسجل لهذا الحساب. تواصل مع المشرف.',true);return;
+  }
+  const btn=document.getElementById('btnForgotSend');
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> جاري الإرسال...';
+  forgotOTP=generateOTP();
+  forgotUser=u;
+  const sent=sendWaOTP(u.phone, forgotOTP);
+  btn.disabled=false;btn.innerHTML='💬 إرسال رمز التحقق عبر واتساب';
+  if(!sent){showToast('⚠️ لا يوجد رقم هاتف مسجل لهذا الحساب',true);return;}
+  document.getElementById('forgotNoticeText').textContent=
+    `💬 تم فتح واتساب لإرسال الرمز — أدخله هنا`;
+  clearOtpBoxes('.otp-input-forgot');
+  document.getElementById('newPass1').value='';
+  document.getElementById('newPass2').value='';
+  showScreen('s-forgot-otp');
+  forgotTimerInterval=startOtpTimer('forgotOtpTimer',300,forgotTimerInterval,()=>{
+    showToast('⏱ انتهت صلاحية الرمز، أعد الإرسال',true);
+  });
+  setTimeout(()=>document.querySelectorAll('.otp-input-forgot')[0].focus(),200);
+}
+
+function forgotStep2auto(){
+  const entered=getOtpValue('.otp-input-forgot');
+  if(entered.length===6 && entered===forgotOTP){
+    showToast('✅ الرمز صحيح! أدخل كلمة المرور الجديدة');
+    document.getElementById('newPass1').focus();
+  }
+}
+
+function forgotStep2(){
+  const entered=getOtpValue('.otp-input-forgot');
+  if(entered.length<6){showToast('⚠️ أدخل رمز التحقق كاملاً',true);return;}
+  if(entered!==forgotOTP){showToast('❌ رمز التحقق غير صحيح',true);clearOtpBoxes('.otp-input-forgot');return;}
+  const p1=document.getElementById('newPass1').value;
+  const p2=document.getElementById('newPass2').value;
+  if(!p1||p1.length<4){showToast('⚠️ كلمة المرور قصيرة جداً (4 أحرف كحد أدنى)',true);return;}
+  if(p1!==p2){showToast('❌ كلمة المرور غير متطابقة',true);return;}
+  const idx=users.findIndex(x=>x.id===forgotUser.id);
+  users[idx].pass=p1; persist();
+  clearInterval(forgotTimerInterval);
+  forgotOTP=null; forgotUser=null;
+  showToast('✅ تم تغيير كلمة المرور بنجاح! سجّل دخولك الآن');
+  setTimeout(()=>showScreen('s-login'),1800);
+}
+
+async function resendForgotOTP(){
+  if(!forgotUser)return;
+  const btn=document.getElementById('btnResendForgot');
+  btn.disabled=true;
+  forgotOTP=generateOTP();
+  sendWaOTP(forgotUser.phone, forgotOTP);
+  btn.disabled=false;
+  clearOtpBoxes('.otp-input-forgot');
+  forgotTimerInterval=startOtpTimer('forgotOtpTimer',300,forgotTimerInterval,null);
+  showToast('💬 تم فتح واتساب لإعادة إرسال الرمز');
+}
+
+// ══════════════════════════════════════════════
+//  TELEGRAM SETUP SCREEN
+// ══════════════════════════════════════════════
+let cmbSetupReturnScreen='s-login';
+
+function showCmbSetupGuide(fromProfile=false){
+  cmbSetupReturnScreen = fromProfile ? 'app' : 's-login';
+  document.getElementById('cmbBackBtn').onclick = fromProfile
+    ? ()=>{ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); }
+    : ()=>showScreen('s-login');
+  // Pre-fill if user already has data
+
+  showScreen('s-cmb-setup');
+}
+
+// openCmbActivate removed — using Telegram now
+
+function testCmbAndSave(){
+  showScreen('s-login');
+}
+
+
+// ══════════════════════════════════════════════
+//  REGISTER FLOW
+// ══════════════════════════════════════════════
+function showRegisterFlow(){
+  ['regName','regId','regPass','regPassConf','regPhone'].forEach(i=>{
+    const el=document.getElementById(i); if(el) el.value='';
+  });
+  showScreen('s-register');
+}
+
+function submitRegister(){
+  const name  = document.getElementById('regName').value.trim();
+  const id    = document.getElementById('regId').value.trim().toUpperCase();
+  const phone = document.getElementById('regPhone').value.replace(/\D/g,'');
+  const pass  = document.getElementById('regPass').value;
+  const conf  = document.getElementById('regPassConf').value;
+
+  if(!name||!id||!pass){showToast('⚠️ الاسم ورقم المستخدم وكلمة المرور مطلوبة',true);return;}
+  if(pass.length<4){showToast('⚠️ كلمة المرور قصيرة جداً',true);return;}
+  if(pass!==conf){showToast('❌ كلمة المرور غير متطابقة',true);return;}
+  if(users.find(u=>u.id===id)||pendingRequests.find(p=>p.id===id)){
+    showToast('❌ رقم المستخدم مستخدم أو مطلوب مسبقاً',true);return;
+  }
+
+  const req = {
+    id, name, pass,
+    phone: phone ? '+962'+phone : '',
+    role:'tech',
+    requestedAt: new Date().toISOString()
+  };
+  pendingRequests.push(req);
+  persistPending();
+  showToast('✅ تم إرسال طلبك — انتظر موافقة المشرف');
+  setTimeout(()=>showScreen('s-login'),1800);
+}
+
+// ══════════════════════════════════════════════
+//  PENDING REQUESTS (ADMIN)
+// ══════════════════════════════════════════════
+function updatePendingBadge(){
+  const pb=document.getElementById('pendingBadge');
+  if(!pb)return;
+  if(pendingRequests.length>0){pb.style.display='inline';pb.textContent=pendingRequests.length;}
+  else{pb.style.display='none';}
+}
+
+function renderPendingRequests(){
+  const card=document.getElementById('pendingCard');
+  const tbody=document.getElementById('pendingTbody');
+  const title=document.getElementById('pendingTitle');
+  if(!pendingRequests.length){card.style.display='none';return;}
+  card.style.display='';
+  title.innerHTML=`⏳ طلبات التسجيل المعلّقة <span style="background:var(--red);color:#fff;border-radius:20px;padding:2px 9px;font-size:12px;margin-right:6px">${pendingRequests.length}</span>`;
+  tbody.innerHTML='';
+  pendingRequests.forEach(r=>{
+    const row=document.createElement('tr');
+    row.innerHTML=`
+      <td><b>${esc(r.name)}</b></td>
+      <td style="font-family:var(--mono);color:var(--accent)">${esc(r.id)}</td>
+      <td style="font-size:11px;color:var(--muted)">${r.phone?maskPhone(r.phone):'—'}</td>
+      <td style="font-family:var(--mono);font-size:10.5px;color:var(--muted)">${fmtDateTime(r.requestedAt)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-success btn-xs" onclick="approvePending('${esc(r.id)}')">✅ قبول</button>
+        <button class="btn btn-danger btn-xs" style="margin-right:4px" onclick="rejectPending('${esc(r.id)}')">❌ رفض</button>
+      </td>`;
+    tbody.appendChild(row);
+  });
+}
+
+function approvePending(id){
+  const idx=pendingRequests.findIndex(x=>x.id===id);
+  if(idx<0)return;
+  const r=pendingRequests[idx];
+  users.push({id:r.id,name:r.name,pass:r.pass,role:r.role,phone:r.phone||''});
+  pendingRequests.splice(idx,1);
+  persist(); persistPending();
+  renderPendingRequests(); renderUsersTable();
+  logActivity('approve',`${r.name} (${r.id})`);
+  updatePendingBadge();
+  showToast(`✅ تم قبول ${r.name} — يمكنه الدخول الآن`);
+}
+
+function rejectPending(id){
+  const r=pendingRequests.find(x=>x.id===id);
+  if(!r||!confirm(`رفض طلب ${r.name}؟`))return;
+  pendingRequests=pendingRequests.filter(x=>x.id!==id);
+  persistPending();
+  logActivity('reject',`${r.name} (${r.id})`);
+  renderPendingRequests();
+  updatePendingBadge();
+  showToast('🗑️ تم رفض الطلب');
+}
+// ══════════════════════════════════════════════
+//  APP INIT
+// ══════════════════════════════════════════════
+function initApp(){
+  const badge=document.getElementById('userBadge');
+  document.getElementById('userNameBadge').textContent=currentUser.name;
+  document.getElementById('userIdBadge').textContent=currentUser.id;
+  badge.className='user-badge'+(currentUser.role==='admin'?' admin-badge':'');
+  document.getElementById('adminTab').style.display=currentUser.role==='admin'?'':'none';
+  document.getElementById('auditTab').style.display=currentUser.role==='tech'?'':'none';
+  document.getElementById('fDate').value=today();
+  // Show pending badge for admins
+  if(currentUser.role==='admin' && pendingRequests.length>0){
+    const pb=document.getElementById('pendingBadge');
+    if(pb){pb.style.display='inline';pb.textContent=pendingRequests.length;}
+  }
+  // Show/hide restricted UI elements
+  document.querySelectorAll('.admin-only').forEach(el=>{
+    el.style.display=can('manageUsers')?'':'none';
+  });
+  document.querySelectorAll('.export-only').forEach(el=>{
+    el.style.display=can('exportData')?'':'none';
+  });
+  document.querySelectorAll('.print-only').forEach(el=>{
+    el.style.display=can('printReport')?'':'none';
+  });
+  switchTab('records',document.querySelector('.tab[data-tab="records"]'));
+}
+
+function loadSettingsFields(){
+  const el=document.getElementById('overdueDays');
+  if(el) el.value=settings.overdueDays||7;
+}
+
+// ══════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════
+function switchTab(name,btn){
+  ['records','add','profile','audit','admin'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===name?'':'none';
+  });
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  if(name==='records'){renderStats();renderTable();}
+  if(name==='admin'){renderPendingRequests();renderUsersTable();renderActivityLog();renderAuditLog();loadSettingsFields();}
+  if(name==='profile')renderProfile();
+  if(name==='audit')renderAuditLogTech();
+}
+
+// ══════════════════════════════════════════════
+//  PROFILE
+// ══════════════════════════════════════════════
+function renderProfile(){
+  const hasPhone=!!(currentUser.phone&&currentUser.phone.replace(/\D/g,'').length>=7);
+  const p=PERMISSIONS[currentUser.role]||PERMISSIONS.tech;
+  const permList=[
+    p.addRecord       ?'✅ إضافة استعارات':'❌ إضافة استعارات',
+    (p.returnAny||p.returnOwn)?'✅ تسجيل إرجاع'+(p.returnAny?'':' (سجلاته فقط)'):'❌ تسجيل إرجاع',
+    p.deleteRecord    ?'✅ حذف سجلات':'❌ حذف سجلات',
+    p.exportData      ?'✅ تصدير Excel / Backup':'❌ تصدير البيانات',
+    p.printReport     ?'✅ طباعة / PDF':'❌ طباعة',
+    p.viewAuditFull   ?'✅ Audit Log كامل':'❌ Audit Log',
+    p.viewActivity    ?'✅ سجل النشاط':'❌ سجل النشاط',
+    p.manageUsers     ?'✅ إدارة المستخدمين':'❌ إدارة المستخدمين',
+    p.sendAlerts      ?'✅ إرسال تنبيهات':'❌ إرسال تنبيهات',
+  ].map(x=>`<span style="font-size:12px;display:inline-block;margin-left:12px;margin-bottom:3px">${x}</span>`).join('');
+
+  document.getElementById('profileInfo').innerHTML=`
+    <b>الاسم:</b> ${esc(currentUser.name)}<br>
+    <b>رقم المستخدم:</b> <span style="font-family:var(--mono);color:var(--accent)">${esc(currentUser.id)}</span><br>
+    <b>الصلاحية:</b> <span class="role-badge role-${currentUser.role}">${currentUser.role==='admin'?'👑 مشرف':'🔬 فني'}</span><br>
+    <b>واتساب OTP:</b> ${hasPhone
+      ?`<span style="color:var(--green)">✅ ${maskPhone(currentUser.phone)}</span>`
+      :'<span style="color:var(--muted)">❌ لم يُضَف رقم بعد</span>'}<br>
+    <b>آخر دخول:</b> ${currentUser.lastLogin?fmtDateTime(currentUser.lastLogin):'—'}<br>
+    <div style="margin-top:10px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
+      <b style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">📋 صلاحياتك:</b>
+      ${permList}
+    </div>
+  `;
+
+  document.getElementById('profileApiKey').value=(currentUser.phone||'').replace('+962','').replace(/\D/g,'');
+}
+
+function saveProfileCmb(){
+  const raw=document.getElementById('profileApiKey').value.replace(/\D/g,'');
+  if(!raw||raw.length<9){showToast('⚠️ أدخل رقماً صحيحاً (9 أرقام)',true);return;}
+  const phone='+962'+raw;
+  updateCurrentUser({phone});
+  renderProfile();showToast('✅ تم حفظ رقم الواتساب');
+}
+
+function testProfileCmb(){
+  const u=currentUser;
+  if(!u.phone||u.phone.replace(/\D/g,'').length<7){showToast('⚠️ احفظ رقم الواتساب أولاً',true);return;}
+  const otp=generateOTP();
+  sendWaOTP(u.phone, otp);
+  showToast('💬 تم فتح واتساب برسالة الاختبار');
+}
+
+function showCmbSetupFromProfile(){showCmbSetupGuide(true);}
+
+// ══════════════════════════════════════════════
+//  CHANGE PASSWORD
+// ══════════════════════════════════════════════
+function changePassword(oldId,newId,confId,onSuccess){
+  const oldP=document.getElementById(oldId).value;
+  const newP=document.getElementById(newId).value;
+  const conf=document.getElementById(confId).value;
+  if(!oldP||!newP||!conf){showToast('⚠️ يرجى ملء جميع الحقول',true);return;}
+  if(oldP!==currentUser.pass){showToast('❌ كلمة المرور الحالية غير صحيحة',true);return;}
+  if(newP.length<4){showToast('⚠️ كلمة المرور الجديدة قصيرة (4 أحرف كحد أدنى)',true);return;}
+  if(newP!==conf){showToast('❌ كلمة المرور الجديدة غير متطابقة',true);return;}
+  updateCurrentUser({pass:newP});
+  [oldId,newId,confId].forEach(i=>document.getElementById(i).value='');
+  if(onSuccess)onSuccess();
+  showToast('✅ تم تغيير كلمة المرور بنجاح');
+}
+
+function openCpModal(){
+  ['mcpOld','mcpNew','mcpConf'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('cpModal').classList.add('open');
+}
+
+function updateCurrentUser(patch){
+  const idx=users.findIndex(x=>x.id===currentUser.id);
+  Object.assign(users[idx],patch); currentUser=users[idx]; persist();
+}
+
+// ══════════════════════════════════════════════
+//  RECORDS
+// ══════════════════════════════════════════════
+function addRecord(){
+  const caseNo=document.getElementById('fCaseNo').value.trim();
+  const borrower=document.getElementById('fBorrower').value.trim();
+  const doctor=document.getElementById('fDoctor').value.trim();
+  const date=document.getElementById('fDate').value;
+  const notes=document.getElementById('fNotes').value.trim();
+  if(!caseNo||!borrower||!doctor||!date){showToast('⚠️ يرجى ملء الحقول المطلوبة',true);return;}
+  records.unshift({id:'REC-'+Date.now(),caseNo,borrower,doctor,date,notes,
+    status:'out',returnDate:null,returnedBy:null,returnedByName:null,returnedAt:null,
+    addedBy:currentUser.id,addedByName:currentUser.name,createdAt:new Date().toISOString()});
+  persist();clearForm();
+  logActivity('add_record',`رقم الحالة: ${caseNo} — المستعير: ${borrower}`);
+  showToast('✅ تم حفظ الاستعارة');
+  switchTab('records',document.querySelector('.tab[data-tab="records"]'));
+}
+
+function clearForm(){
+  ['fCaseNo','fBorrower','fDoctor','fNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fDate').value=today();
+}
+
+function renderTable(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const filt=document.getElementById('filterStatus').value;
+  let data=records.filter(r=>{
+    const mQ=!q||r.caseNo.toLowerCase().includes(q)||r.borrower.toLowerCase().includes(q)||r.doctor.toLowerCase().includes(q);
+    if(filt==='overdue') return mQ&&isOverdue(r);
+    return mQ&&(!filt||r.status===filt);
+  });
+  const tbody=document.getElementById('recordsTbody');
+  tbody.innerHTML='';
+  document.getElementById('emptyMsg').style.display=data.length?'none':'block';
+  data.forEach((r,i)=>{
+    const canReturn=(can('returnAny'))||(can('returnOwn')&&r.addedBy===currentUser.id);
+    const od=isOverdue(r);
+    const auditCell=r.status==='returned'
+      ?`<div class="audit-chip">
+          <span class="lbl">👤 </span><span class="val">${esc(r.returnedByName)}</span> <span style="color:var(--border)">|</span>
+          <span class="lbl"> 🪪 </span><span class="val">${esc(r.returnedBy)}</span><br>
+          <span class="lbl">🕐 </span><span style="color:var(--green);font-size:10.5px">${fmtDateTime(r.returnedAt)}</span>
+        </div>`
+      :`<span style="color:var(--muted)">—</span>`;
+    const overdueCell=od?`<br><span class="overdue-badge">⚠️ ${daysSince(r.date)} يوم</span>`:'';
+    const row=document.createElement('tr');
+    if(od) row.classList.add('overdue-row');
+    row.innerHTML=`
+      <td style="color:var(--muted);font-family:var(--mono);font-size:10px">${i+1}</td>
+      <td><strong style="color:var(--accent)">${esc(r.caseNo)}</strong></td>
+      <td>${esc(r.borrower)}</td>
+      <td style="color:var(--gold)">Dr. ${esc(r.doctor)}</td>
+      <td style="font-family:var(--mono);font-size:10.5px">${r.date}${overdueCell}</td>
+      <td><span class="status status-${r.status}">${r.status==='out'?'📤 مُستعارة':'✅ تم الإرجاع'}</span></td>
+      <td>${auditCell}</td>
+      <td style="font-size:11px;color:var(--muted)">${esc(r.addedByName)}<br>
+        <span style="font-family:var(--mono);font-size:10px">${r.addedBy}</span></td>
+      <td style="white-space:nowrap">
+        ${r.status==='out'&&canReturn?`<button class="btn btn-success btn-xs" onclick="openReturnModal('${r.id}')">إرجاع</button>`:''}
+        ${can('deleteRecord')?`<button class="btn btn-danger btn-xs" style="margin-right:3px" onclick="deleteRecord('${r.id}')">🗑️</button>`:''}
+      </td>`;
+    tbody.appendChild(row);
+  });
+}
+
+function openReturnModal(id){
+  const r=records.find(x=>x.id===id);if(!r)return;
+  pendingReturnId=id;
+  document.getElementById('returnInfo').innerHTML=`
+    <b>رقم الحالة:</b> ${esc(r.caseNo)}<br>
+    <b>المستعير:</b> ${esc(r.borrower)}<br>
+    <b>Checked by Dr.:</b> ${esc(r.doctor)}<br>
+    <b>تاريخ الاستعارة:</b> ${r.date}`;
+  document.getElementById('returnAuditPreview').textContent=
+    `${currentUser.name} (${currentUser.id}) — ${fmtDateTime(new Date().toISOString())}`;
+  document.getElementById('returnModal').classList.add('open');
+}
+
+function confirmReturn(){
+  const r=records.find(x=>x.id===pendingReturnId);if(!r)return;
+  const now=new Date().toISOString();
+  Object.assign(r,{status:'returned',returnDate:now.split('T')[0],
+    returnedBy:currentUser.id,returnedByName:currentUser.name,returnedAt:now});
+  auditLog.unshift({id:'AUD-'+Date.now(),caseNo:r.caseNo,
+    returnedBy:currentUser.id,returnedByName:currentUser.name,
+    returnedAt:now,ua:navigator.userAgent.substring(0,90)});
+  persist();closeModal('returnModal');renderTable();renderStats();
+  logActivity('return',`رقم الحالة: ${r.caseNo}`);
+  showToast('✅ تم تسجيل الإرجاع في سجل الـ Audit');
+}
+
+function deleteRecord(id){
+  if(!can('deleteRecord')){showToast('❌ ليس لديك صلاحية الحذف',true);return;}
+  if(!confirm('حذف هذا السجل؟'))return;
+  const dr=records.find(x=>x.id===id);
+  records=records.filter(x=>x.id!==id);persist();renderTable();renderStats();
+  logActivity('delete_record',`رقم الحالة: ${dr?.caseNo||id}`);
+  showToast('🗑️ تم الحذف');
+}
+
+function renderStats(){
+  const total=records.length,out=records.filter(r=>r.status==='out').length;
+  const ret=records.filter(r=>r.status==='returned').length;
+  const tod=records.filter(r=>r.date===today()).length;
+  const od=records.filter(r=>isOverdue(r)).length;
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-card stat-accent"><div class="stat-num">${total}</div><div class="stat-label">إجمالي الاستعارات</div></div>
+    <div class="stat-card stat-red"><div class="stat-num">${out}</div><div class="stat-label">مُستعارة حالياً</div></div>
+    <div class="stat-card stat-green"><div class="stat-num">${ret}</div><div class="stat-label">تم الإرجاع</div></div>
+    <div class="stat-card stat-gold"><div class="stat-num">${tod}</div><div class="stat-label">اليوم</div></div>
+    ${od>0?`<div class="stat-card" style="border-color:rgba(230,57,70,.4)"><div class="stat-num" style="color:var(--red)">${od}</div><div class="stat-label">⚠️ متأخرة</div></div>`:''}`;
+  checkOverdueBanner();
+}
+
+
+function toggleSuspend(id){
+  const idx=users.findIndex(u=>u.id===id); if(idx<0)return;
+  const u=users[idx];
+  u.suspended=!u.suspended;
+  persist(); renderUsersTable();
+  logActivity(u.suspended?'suspend':'unsuspend', `${u.name} (${u.id})`);
+  showToast(u.suspended?`🚫 تم إيقاف حساب ${u.name}`:`✅ تم تفعيل حساب ${u.name}`);
+}
+
+// ══════════════════════════════════════════════
+//  ACTIVITY LOG
+// ══════════════════════════════════════════════
+function renderActivityLog(){
+  const filt=document.getElementById('actFilter')?.value||'';
+  let data=filt ? activityLog.filter(a=>a.type===filt) : activityLog;
+  const tbody=document.getElementById('actTbody');
+  if(!tbody)return;
+  tbody.innerHTML='';
+  document.getElementById('actEmpty').style.display=data.length?'none':'block';
+  data.forEach(a=>{
+    const cls='act-'+a.type.replace('_','-');
+    const row=document.createElement('tr');
+    row.innerHTML=`
+      <td style="font-family:var(--mono);font-size:10.5px;color:var(--muted);white-space:nowrap">${fmtDateTime(a.at)}</td>
+      <td style="font-size:12px"><b style="color:var(--accent)">${esc(a.userName)}</b><br>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${esc(a.userId)}</span></td>
+      <td><span class="${cls}">${ACT_LABELS[a.type]||a.type}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${esc(a.details)}</td>`;
+    tbody.appendChild(row);
+  });
+}
+
+function clearActivityLog(){
+  if(!confirm('مسح سجل النشاط كاملاً؟'))return;
+  activityLog=[];
+  persistActivity();
+  renderActivityLog();
+  showToast('🗑️ تم مسح سجل النشاط');
+}
+// ══════════════════════════════════════════════
+//  AUDIT LOG
+// ══════════════════════════════════════════════
+function renderAuditLog(){
+  const tbody=document.getElementById('auditTbody');tbody.innerHTML='';
+  // Filter: admin sees all, tech sees only their own returns
+  const data=can('viewAuditFull')?auditLog:auditLog.filter(a=>a.returnedBy===currentUser.id);
+  document.getElementById('auditEmpty').style.display=data.length?'none':'block';
+  data.forEach(a=>{
+    const row=document.createElement('tr');
+    row.innerHTML=`
+      <td><strong style="color:var(--accent)">${esc(a.caseNo)}</strong></td>
+      <td>${esc(a.returnedByName)}</td>
+      <td style="font-family:var(--mono);color:var(--accent);font-size:10.5px">${esc(a.returnedBy)}</td>
+      <td style="font-family:var(--mono);font-size:10.5px;color:var(--green)">${fmtDateTime(a.returnedAt)}</td>
+      <td style="font-size:10px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.ua)}</td>`;
+    tbody.appendChild(row);
+  });
+}
+
+function renderAuditLogTech(){
+  const tbody=document.getElementById('auditTbodyTech');
+  if(!tbody)return;
+  tbody.innerHTML='';
+  document.getElementById('auditEmptyTech').style.display=auditLog.length?'none':'block';
+  auditLog.forEach(a=>{
+    const row=document.createElement('tr');
+    row.innerHTML=`
+      <td><strong style="color:var(--accent)">${esc(a.caseNo)}</strong></td>
+      <td>${esc(a.returnedByName)}</td>
+      <td style="font-family:var(--mono);color:var(--accent);font-size:10.5px">${esc(a.returnedBy)}</td>
+      <td style="font-family:var(--mono);font-size:10.5px;color:var(--green)">${fmtDateTime(a.returnedAt)}</td>`;
+    tbody.appendChild(row);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  USERS ADMIN
+// ══════════════════════════════════════════════
+function addUser(){
+  const id    = document.getElementById('aId').value.trim();
+  const name  = document.getElementById('aName').value.trim();
+  const phone = document.getElementById('aPhone').value.trim();
+  const pass  = document.getElementById('aPass').value;
+  const role  = document.getElementById('aRole').value;
+  if(!id||!name||!pass){showToast('⚠️ يرجى ملء الحقول المطلوبة (رقم، اسم، كلمة مرور)',true);return;}
+  if(users.find(u=>u.id===id)){showToast('❌ رقم المستخدم مستخدم مسبقاً',true);return;}
+  users.push({id,name,pass,role,phone:phone||''});
+  persist();['aId','aName','aPhone','aPass'].forEach(i=>document.getElementById(i).value='');
+  logActivity('user_add',`${name} (${id})`);
+  renderUsersTable();showToast('✅ تمت إضافة المستخدم');
+}
+
+function deleteUser(id){
+  if(id===currentUser.id){showToast('❌ لا يمكن حذف نفسك',true);return;}
+  if(!confirm('حذف المستخدم؟'))return;
+  const du=users.find(u=>u.id===id);
+  users=users.filter(u=>u.id!==id);persist();renderUsersTable();
+  logActivity('user_del',`${du?.name||id} (${id})`);
+  showToast('🗑️ تم الحذف');
+}
+
+function renderUsersTable(){
+  const tbody=document.getElementById('usersTbody');tbody.innerHTML='';
+  users.forEach(u=>{
+    const hasPhone=!!(u.phone&&u.phone.replace(/\D/g,'').length>=7);
+    const isSelf=u.id===currentUser.id;
+    const row=document.createElement('tr');
+    row.innerHTML=`
+      <td style="font-family:var(--mono);color:var(--accent)">${esc(u.id)}</td>
+      <td>${esc(u.name)}</td>
+      <td><span class="role-badge role-${u.role}">${u.role==='admin'?'👑 مشرف':'🔬 فني'}</span></td>
+      <td>${hasCmb
+        ?`<span style="color:var(--green);font-size:12px">✅ ${maskPhone(u.phone)}</span>`
+        :`<span style="color:var(--muted);font-size:12px">❌ لا يوجد رقم</span>`}</td>
+      <td style="white-space:nowrap">
+        ${isSelf
+          ? `<span style="color:var(--muted);font-size:11px">أنت</span>`
+          : `<button class="btn btn-gold btn-xs" onclick="openResetPassModal('${esc(u.id)}')">🔑 إعادة تعيين</button>
+             <button class="btn btn-danger btn-xs" style="margin-right:4px" onclick="deleteUser('${esc(u.id)}')">🗑️</button>`
+        }
+      </td>`;
+    tbody.appendChild(row);
+  });
+}
+
+let resetPassTargetId=null;
+function openResetPassModal(uid){
+  const u=users.find(x=>x.id===uid);if(!u)return;
+  resetPassTargetId=uid;
+  document.getElementById('resetPassTarget').textContent=`المستخدم: ${u.name} (${u.id})`;
+  document.getElementById('resetNewPass').value='';
+  document.getElementById('resetConfPass').value='';
+  document.getElementById('resetPassModal').classList.add('open');
+}
+function confirmResetPass(){
+  const p1=document.getElementById('resetNewPass').value;
+  const p2=document.getElementById('resetConfPass').value;
+  if(!p1||p1.length<4){showToast('⚠️ كلمة المرور قصيرة جداً (4 أحرف كحد أدنى)',true);return;}
+  if(p1!==p2){showToast('❌ كلمة المرور غير متطابقة',true);return;}
+  const idx=users.findIndex(x=>x.id===resetPassTargetId);
+  if(idx<0)return;
+  users[idx].pass=p1; persist();
+  logActivity('reset_pass',`${users[idx].name} (${users[idx].id})`);
+  closeModal('resetPassModal');
+  showToast(`✅ تم إعادة تعيين كلمة مرور ${users[idx].name}`);
+}
+
+// ══════════════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════════════
+let settings = loadData('tls_settings') || {overdueDays:7};
+function saveSettings(){
+  const d=parseInt(document.getElementById('overdueDays')?.value)||7;
+  settings.overdueDays=d;
+  saveData('tls_settings',settings);
+}
+
+// ══════════════════════════════════════════════
+//  OVERDUE LOGIC
+// ══════════════════════════════════════════════
+function isOverdue(r){
+  if(r.status!=='out') return false;
+  const days=settings.overdueDays||7;
+  const diff=(Date.now()-new Date(r.date+'T00:00:00').getTime())/(1000*3600*24);
+  return diff>days;
+}
+function daysSince(dateStr){
+  return Math.floor((Date.now()-new Date(dateStr+'T00:00:00').getTime())/(1000*3600*24));
+}
+
+function checkOverdueBanner(){
+  const od=records.filter(r=>isOverdue(r));
+  const banner=document.getElementById('overdueBanner');
+  if(!banner) return;
+  if(od.length>0){
+    banner.style.display='block';
+    banner.innerHTML=`⚠️ <strong>${od.length}</strong> عينة متأخرة (أكثر من ${settings.overdueDays} يوم) — اضغط هنا للعرض`;
+  } else {
+    banner.style.display='none';
+  }
+}
+
+function filterOverdue(){
+  document.getElementById('filterStatus').value='overdue';
+  renderTable();
+}
+
+async function sendOverdueAlerts(){
+  if(!can('sendAlerts')){showToast('❌ صلاحية الإشعارات للمشرف فقط',true);return;}
+  const od=records.filter(r=>isOverdue(r));
+  if(!od.length){showToast('✅ لا توجد عينات متأخرة');return;}
+  // Send to admin users who have CMB configured
+  const admins=users.filter(u=>u.role==='admin'&&u.phone&&u.phone.replace(/\D/g,'').length>=7);
+  if(!admins.length){showToast('⚠️ لا يوجد مشرف لديه رقم واتساب مسجل',true);return;}
+  const lines=od.map(r=>`• ${r.caseNo} — ${r.borrower} (${daysSince(r.date)} يوم)`).join('\n');
+  const msg=`🔬 *تنبيه: عينات متأخرة*\nمستشفى الجامعة الأردنية\n\n*${od.length}* عينة لم تُرجع بعد ${settings.overdueDays} يوم:\n\n${lines}\n\n⏰ ${new Date().toLocaleString('ar-JO')}`;
+  let sent=0;
+  // Open WA for each admin
+  for(const adm of admins){
+    const clean=adm.phone.replace(/\D/g,'');
+    const enc=encodeURIComponent(msg);
+    window.open(`https://wa.me/${clean}?text=${enc}`,'_blank');
+    sent++;
+    await new Promise(r=>setTimeout(r,800)); // slight delay between tabs
+  }
+  showToast(`📤 تم إرسال التنبيه إلى ${sent} مشرف`);
+}
+
+// ══════════════════════════════════════════════
+//  PDF / PRINT
+// ══════════════════════════════════════════════
+function printReport(){
+  if(!can('printReport')){showToast('❌ صلاحية الطباعة للمشرف فقط',true);return;}
+  document.getElementById('printDate').textContent=
+    `تاريخ التقرير: ${new Date().toLocaleString('ar-JO')} — أعدّه: ${currentUser.name} (${currentUser.id})`;
+  document.getElementById('printHeader').style.display='block';
+  window.print();
+  setTimeout(()=>document.getElementById('printHeader').style.display='none',1000);
+}
+
+// ══════════════════════════════════════════════
+//  BACKUP & RESTORE
+// ══════════════════════════════════════════════
+function exportBackup(){
+  if(!can('exportData')){showToast('❌ صلاحية النسخ الاحتياطي للمشرف فقط',true);return;}
+  const bk={
+    version:2,
+    exportedAt:new Date().toISOString(),
+    exportedBy:currentUser.id,
+    records, auditLog,
+    settings,
+    // Don't export passwords in plaintext — strip them
+    usersMeta: users.map(({id,name,role,wa})=>({id,name,role,wa}))
+  };
+  const blob=new Blob([JSON.stringify(bk,null,2)],{type:'application/json'});
+  const a=Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(blob),
+    download:`tls_backup_${today()}.json`});
+  a.click();
+  showToast('✅ تم تنزيل النسخة الاحتياطية');
+}
+
+function importBackup(e){
+  if(!can('exportData')){showToast('❌ صلاحية الاستيراد للمشرف فقط',true);return;}
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const bk=JSON.parse(ev.target.result);
+      if(!bk.records||!Array.isArray(bk.records))throw new Error('ملف غير صالح');
+      if(!confirm(`استيراد ${bk.records.length} سجل من النسخة الاحتياطية؟\nسيتم دمج البيانات مع الموجودة (لن تُحذف بيانات حالية).`))return;
+      // Merge: add records not already in current data
+      const existing=new Set(records.map(r=>r.id));
+      const added=bk.records.filter(r=>!existing.has(r.id));
+      records=[...added,...records];
+      const existAudit=new Set(auditLog.map(a=>a.id));
+      const addedAudit=(bk.auditLog||[]).filter(a=>!existAudit.has(a.id));
+      auditLog=[...addedAudit,...auditLog];
+      persist();renderTable();renderStats();renderAuditLog();
+      showToast(`✅ تم استيراد ${added.length} سجل جديد`);
+    }catch(err){showToast('❌ فشل الاستيراد: '+err.message,true);}
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+// ══════════════════════════════════════════════
+//  EXCEL EXPORT
+// ══════════════════════════════════════════════
+function exportExcel(){
+  if(!can('exportData')){showToast('❌ صلاحية التصدير للمشرف فقط',true);return;}
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const filt=document.getElementById('filterStatus').value;
+  let data=records.filter(r=>{
+    const mQ=!q||r.caseNo.toLowerCase().includes(q)||r.borrower.toLowerCase().includes(q);
+    return mQ&&(!filt||r.status===filt);
+  });
+  if(!data.length){showToast('⚠️ لا توجد بيانات',true);return;}
+  const BOM='\uFEFF';
+  const headers=['#','رقم الحالة','اسم المستعير','Checked by Dr.','تاريخ الاستعارة','تاريخ الإرجاع',
+    'أرجع بواسطة','رقم المُرجِع','وقت الإرجاع الدقيق','المُدخِل','رقم المُدخِل','الحالة','ملاحظات'];
+  const rows=data.map((r,i)=>[i+1,r.caseNo,r.borrower,'Dr. '+r.doctor,r.date,
+    r.returnDate||'',r.returnedByName||'',r.returnedBy||'',
+    r.returnedAt?fmtDateTime(r.returnedAt):'',
+    r.addedByName,r.addedBy,r.status==='out'?'مُستعارة':'تم الإرجاع',r.notes||'']);
+  const csv=BOM+[headers,...rows].map(row=>row.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),
+    download:`tissue_loans_${today()}.csv`});
+  a.click();showToast('📥 تم تنزيل Excel');
+}
+
+// ══════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function today(){return new Date().toISOString().split('T')[0];}
+function fmtDateTime(iso){
+  if(!iso)return'—';
+  try{const d=new Date(iso);
+    return d.toLocaleDateString('ar-JO',{year:'numeric',month:'2-digit',day:'2-digit'})+
+    ' '+d.toLocaleTimeString('ar-JO',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});}
+  catch{return iso;}}
+function maskPhone(p){if(!p)return'';const s=String(p);return s.slice(0,5)+'****'+s.slice(-3);}
+function showToast(msg,isError=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='show'+(isError?' error':'');
+  clearTimeout(t._timer);t._timer=setTimeout(()=>t.className='',3500);}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+  if(id==='returnModal')pendingReturnId=null;}
+['returnModal','cpModal','resetPassModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeModal(id);});
+});
+</script>
+</body>
+</html>
